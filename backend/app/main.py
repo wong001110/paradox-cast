@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .database import Base, engine
+from . import models
 
 app = FastAPI(
     title="Paradox Cast API",
@@ -14,9 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+Base.metadata.create_all(bind=engine)
 
 
 @app.get("/api/health", tags=["system"])
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "paradox-cast-api"}
-

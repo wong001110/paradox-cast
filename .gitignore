@@ -6,6 +6,7 @@ backend/.env
 web/node_modules/
 web/dist/
 *.sqlite3
-.egg-info/
+*.db
+*.egg-info/
 *.tsbuildinfo
 .DS_Store
