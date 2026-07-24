@@ -9,6 +9,77 @@ export type DemoRun = {
   divergence: { added_events: number; removed_events: number; final_state_changed: boolean };
 };
 
+export type LocalBootstrapUser = {
+  id: string;
+  display_name: string;
+  is_host: boolean;
+  character: { id: string; name: string; adult_age: number };
+  runtime: { id: string; display_name: string; provider: string; model_id: string };
+};
+export type LocalBootstrap = {
+  enabled: boolean;
+  users: LocalBootstrapUser[];
+  scenario: { id: string; title: string; owner_id: string; version: number };
+  instructions: string;
+};
+export type LobbyMember = {
+  id: string;
+  user_id: string;
+  role: "host" | "participant" | "spectator";
+  cast_slot: string | null;
+  character_card_id: string | null;
+  runtime_profile_id: string | null;
+  funding_model: "host_funded" | "bring_your_own";
+  ready: boolean;
+};
+export type RunManifest = {
+  id: string;
+  lobby_id: string;
+  scenario_version: number;
+  cast: Array<Record<string, unknown>>;
+  runtime_bindings: Array<Record<string, unknown>>;
+  rules: Record<string, unknown>;
+  seed: number;
+  asset_versions: Record<string, number>;
+  intervention_rules: Record<string, unknown>;
+  frozen_at: string;
+};
+export type LobbyView = {
+  id: string;
+  host_id: string;
+  scenario_id: string;
+  join_code: string;
+  visibility: "private" | "unlisted" | "public";
+  status: "open" | "locked" | "running" | "closed";
+  rules: Record<string, unknown>;
+  members: LobbyMember[];
+  run_manifest?: RunManifest;
+};
+export type SystemStatus = {
+  app_env: string;
+  database: { dialect: string; configured: boolean; reachable: boolean; error?: string | null };
+  object_storage: { configured: boolean; reachable: boolean; bucket?: string | null; error?: string };
+  credential_encryption: { persistent_key_configured: boolean };
+  local_bootstrap_enabled: boolean;
+};
+export type CredentialRecord = { id: string; provider: string; label: string; masked_identifier: string };
+export type RuntimeRecord = {
+  id: string;
+  display_name: string;
+  provider: string;
+  model_id: string;
+  credential_id: string | null;
+};
+export type AssetRecord = {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number | null;
+  visibility: "private" | "unlisted" | "public";
+  status: "pending" | "ready" | "failed";
+  created_at: string;
+};
+
 const asString = (value: unknown): string | undefined => typeof value === "string" && value.length > 0 ? value : undefined;
 const asStringArray = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const pretty = (value: string) => value.replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -134,9 +205,120 @@ export function timelineFromSimulation(
   return [...interventionEvents, ...mapped];
 }
 
-export async function startDemoRun(): Promise<DemoRun> {
-  const base = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-  const response = await fetch(`${base}/api/demo/run`, { method: "POST" });
-  if (!response.ok) throw new Error(`Demo run failed (${response.status})`);
-  return response.json() as Promise<DemoRun>;
+export const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const response = await fetch(`${apiBase}${path}`, { ...init, headers });
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") message = payload.detail;
+      else if (payload.detail) message = JSON.stringify(payload.detail);
+    } catch {
+      // Keep the HTTP status when the body is not JSON.
+    }
+    throw new Error(message);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
 }
+
+const query = (values: Record<string, string | undefined>) => {
+  const params = new URLSearchParams();
+  Object.entries(values).forEach(([key, value]) => { if (value) params.set(key, value); });
+  return params.toString();
+};
+
+export async function startDemoRun(): Promise<DemoRun> {
+  return apiFetch<DemoRun>("/api/demo/run", { method: "POST" });
+}
+
+export const bootstrapLocal = () => apiFetch<LocalBootstrap>("/api/local/bootstrap", { method: "POST" });
+export const getSystemStatus = () => apiFetch<SystemStatus>("/api/system/status");
+
+export const createLobby = (ownerId: string, scenarioId: string) => apiFetch<LobbyView>(
+  `/api/lobbies?${query({ owner_id: ownerId })}`,
+  { method: "POST", body: JSON.stringify({ scenario_id: scenarioId, visibility: "unlisted", rules: { memory_editing: "forbidden" } }) },
+);
+export const joinLobby = (userId: string, joinCode: string) => apiFetch<LobbyView>(
+  `/api/lobbies/join?${query({ user_id: userId })}`,
+  { method: "POST", body: JSON.stringify({ join_code: joinCode, role: "participant" }) },
+);
+export const getLobby = (lobbyId: string) => apiFetch<LobbyView>(`/api/lobbies/${lobbyId}`);
+export const bindLobbyMember = (
+  lobbyId: string,
+  userId: string,
+  payload: { cast_slot: string; character_card_id: string; runtime_profile_id: string; funding_model: "host_funded" | "bring_your_own" },
+) => apiFetch<LobbyView>(
+  `/api/lobbies/${lobbyId}/binding?${query({ user_id: userId })}`,
+  { method: "PUT", body: JSON.stringify(payload) },
+);
+export const setLobbyReady = (lobbyId: string, userId: string, ready: boolean) => apiFetch<LobbyView>(
+  `/api/lobbies/${lobbyId}/ready?${query({ user_id: userId })}`,
+  { method: "PUT", body: JSON.stringify({ ready }) },
+);
+export const startLobby = (lobbyId: string, ownerId: string) => apiFetch<RunManifest>(
+  `/api/lobbies/${lobbyId}/start?${query({ owner_id: ownerId })}`,
+  { method: "POST", body: JSON.stringify({ intervention_rules: { allowed: ["delay_information", "reveal_evidence", "redirect_information"] } }) },
+);
+
+export function lobbyWebSocketUrl(lobbyId: string, userId: string): string {
+  const origin = apiBase || window.location.origin;
+  const url = new URL(`/api/lobbies/${lobbyId}/ws`, origin);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.searchParams.set("user_id", userId);
+  return url.toString();
+}
+
+export const createCredential = (ownerId: string, provider: string, label: string, apiSecret: string) => apiFetch<CredentialRecord>(
+  `/api/credentials?${query({ owner_id: ownerId })}`,
+  { method: "POST", body: JSON.stringify({ provider, label, api_secret: apiSecret }) },
+);
+export const createRuntime = (
+  ownerId: string,
+  payload: { display_name: string; provider: string; model_id: string; credential_id?: string; temperature?: number },
+) => apiFetch<RuntimeRecord>(
+  `/api/runtimes?${query({ owner_id: ownerId })}`,
+  { method: "POST", body: JSON.stringify(payload) },
+);
+export const testRuntime = (ownerId: string, runtimeId: string) => apiFetch<Record<string, unknown>>(
+  `/api/runtimes/${runtimeId}/decide?${query({ owner_id: ownerId })}`,
+  {
+    method: "POST",
+    body: JSON.stringify({
+      character_id: "hana",
+      legal_actions: [
+        { kind: "wait", reason: "observe the room" },
+        { kind: "move", destination_id: "station" },
+      ],
+      context: { location: "lounge", objective: "trace the missing hour" },
+    }),
+  },
+);
+
+export const listAssets = (ownerId: string) => apiFetch<AssetRecord[]>(`/api/assets?${query({ owner_id: ownerId })}`);
+export const uploadAsset = async (ownerId: string, file: File): Promise<AssetRecord> => {
+  const signed = await apiFetch<{
+    asset: AssetRecord;
+    upload: { method: string; url: string; headers: Record<string, string> };
+  }>(`/api/assets/presign-upload?${query({ owner_id: ownerId })}`, {
+    method: "POST",
+    body: JSON.stringify({ filename: file.name, content_type: file.type || "application/octet-stream", visibility: "private" }),
+  });
+  const uploadResponse = await fetch(signed.upload.url, {
+    method: signed.upload.method,
+    headers: signed.upload.headers,
+    body: file,
+  });
+  if (!uploadResponse.ok) throw new Error(`Object upload failed (${uploadResponse.status})`);
+  return apiFetch<AssetRecord>(`/api/assets/${signed.asset.id}/complete?${query({ owner_id: ownerId })}`, {
+    method: "POST",
+    body: JSON.stringify({ expected_size_bytes: file.size }),
+  });
+};
+export const getAssetDownload = (assetId: string, viewerId: string) => apiFetch<{ url: string }>(
+  `/api/assets/${assetId}/download?${query({ viewer_id: viewerId })}`,
+);

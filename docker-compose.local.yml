@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paradox_cast
+      POSTGRES_USER: paradox_cast
+      POSTGRES_PASSWORD: paradox_cast
+    ports:
+      - "5432:5432"
+    volumes:
+      - paradox-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paradox_cast -d paradox_cast"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: paradox
+      MINIO_ROOT_PASSWORD: paradox-local-secret
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - paradox-minio:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >-
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 paradox paradox-local-secret; do sleep 2; done;
+      mc mb --ignore-existing local/paradox-cast;
+      mc anonymous set none local/paradox-cast;
+      exit 0;
+      "
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: development
+      AUTO_CREATE_SCHEMA: "true"
+      LOCAL_BOOTSTRAP_ENABLED: "true"
+      DATABASE_URL: postgresql+psycopg://paradox_cast:paradox_cast@postgres:5432/paradox_cast
+      CORS_ORIGINS: http://localhost:5173
+      PARADOX_CAST_CREDENTIAL_KEY: mhkDLb1wg9P61rQTamSfFK29yqwlQe_UXeqaiH_MTPk=
+      R2_BUCKET_NAME: paradox-cast
+      R2_ACCESS_KEY_ID: paradox
+      R2_SECRET_ACCESS_KEY: paradox-local-secret
+      R2_ENDPOINT: http://minio:9000
+      R2_PUBLIC_ENDPOINT: http://localhost:9000
+      R2_REGION: us-east-1
+      R2_ADDRESSING_STYLE: path
+      R2_SIGNED_URL_TTL_SECONDS: "300"
+      R2_AUTO_CREATE_BUCKET: "true"
+      DEEPSEEK_BASE_URL: https://api.deepseek.com
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./web
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  paradox-postgres:
+  paradox-minio:

@@ -1,10 +1,32 @@
+from __future__ import annotations
+
 from typing import Any, Literal
+
 from pydantic import BaseModel, Field, SecretStr, model_validator
+
 from .models import FundingModel, LobbyRole, Visibility
+
+
 class CharacterCreate(BaseModel):
-    name: str; adult_age: int = Field(ge=18, le=120); biography: str=""; profile: dict={}; visual_assets: dict={}; visibility: Visibility=Visibility.PRIVATE
-class CredentialCreate(BaseModel): provider: str; label: str; api_secret: SecretStr
-class CredentialView(BaseModel): id: str; provider: str; label: str; masked_identifier: str
+    name: str
+    adult_age: int = Field(ge=18, le=120)
+    biography: str = ""
+    profile: dict = Field(default_factory=dict)
+    visual_assets: dict = Field(default_factory=dict)
+    visibility: Visibility = Visibility.PRIVATE
+
+
+class CredentialCreate(BaseModel):
+    provider: str = Field(min_length=1, max_length=80)
+    label: str = Field(min_length=1, max_length=120)
+    api_secret: SecretStr
+
+
+class CredentialView(BaseModel):
+    id: str
+    provider: str
+    label: str
+    masked_identifier: str
 
 
 class RuntimeProfileCreate(BaseModel):
@@ -41,6 +63,7 @@ class SimulationCharacter(BaseModel):
 
 class SimulationAction(BaseModel):
     """A high-level intention. The kernel determines whether and how it happens."""
+
     id: str | None = None
     character_id: str
     kind: Literal["move", "change_destination", "observe", "speak", "intercept", "wait"]
@@ -86,6 +109,7 @@ class MockDecisionRequest(BaseModel):
     character_id: str
     legal_actions: list[dict[str, Any]] = Field(default_factory=list)
     requested_action: dict[str, Any] | None = None
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScenarioLocationInput(BaseModel):
@@ -147,3 +171,13 @@ class ManifestStartRequest(BaseModel):
 class BranchReplayRequest(BaseModel):
     simulation: SimulationRequest
     interventions: list[dict] = Field(default_factory=list)
+
+
+class AssetPresignRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: str = Field(min_length=1, max_length=160)
+    visibility: Visibility = Visibility.PRIVATE
+
+
+class AssetCompleteRequest(BaseModel):
+    expected_size_bytes: int | None = Field(default=None, ge=0)
