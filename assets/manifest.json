@@ -14,6 +14,10 @@
     "backgrounds": ["safehouse-lounge-day", "safehouse-lounge-night", "old-station-evening", "cafe-nocturne"]
   },
   "objects": [
+    { "path": "web/public/assets/characters/hana-neutral-v1.webp", "kind": "canonical-neutral-portrait", "character": "hana", "visibility": "public", "status": "ready", "fallback": "web/src/styles.css#cast-portrait" },
+    { "path": "web/public/assets/characters/rei-neutral-v1.webp", "kind": "canonical-neutral-portrait", "character": "rei", "visibility": "public", "status": "ready", "fallback": "web/src/styles.css#cast-portrait" },
+    { "path": "web/public/assets/characters/mira-neutral-v1.webp", "kind": "canonical-neutral-portrait", "character": "mira", "visibility": "public", "status": "ready", "fallback": "web/src/styles.css#cast-portrait" },
+    { "path": "web/public/assets/characters/kagura-neutral-v1.webp", "kind": "canonical-neutral-portrait", "character": "kagura", "visibility": "public", "status": "ready", "fallback": "web/src/styles.css#cast-portrait" },
     { "path": "decor/paper-grain.svg", "kind": "decorative-fallback", "visibility": "public", "status": "ready" },
     { "path": "decor/washi-tape.svg", "kind": "decorative-fallback", "visibility": "public", "status": "ready" },
     { "path": "prompts/default-cast.json", "kind": "prompt-manifest", "visibility": "repository", "status": "ready" }

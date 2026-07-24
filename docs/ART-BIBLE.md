@@ -43,4 +43,4 @@ Production objects belong in Cloudflare R2 under immutable versioned keys such a
 
 ## Current implementation status
 
-The visual-novel shell has intentionally committed CSS illustration and SVG decoration fallbacks so it remains usable without an image generation service. Final AI-generated reference portraits/backgrounds have not been created in this environment. See `docs/TAKE-NOTE.md` for the human review and generation handoff.
+The visual-novel shell retains CSS illustration and SVG decoration fallbacks so it remains usable when an asset cannot be loaded. Four AI-generated canonical neutral portrait cards are committed under `web/public/assets/characters/` and are rendered by the React client. They require human art-direction review before the immutable `official/v1` release is declared. Derived expressions and final scenario backgrounds have not yet been generated; the fallback coverage remains active. See `docs/TAKE-NOTE.md` for that review and generation handoff.

@@ -36,6 +36,10 @@ Start the backend and frontend in separate terminals, then select **Run demo cas
 
 The demo deliberately uses the deterministic mock runtime and needs no provider API key.
 
+## Official default artwork
+
+Four canonical neutral portraits for the adult default cast are committed under `web/public/assets/characters/`. The React presentation uses these WebP portraits and retains a CSS portrait fallback for missing local assets. Prompt and asset contracts live in `assets/prompts/default-cast.json` and `assets/manifest.json`; derived expression portraits and final scenario backgrounds remain tracked as MVP follow-up coverage.
+
 ## Architecture
 
 - `backend/`: FastAPI, SQLAlchemy, Pydantic and the authoritative simulation kernel.

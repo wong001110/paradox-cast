@@ -14,6 +14,7 @@ export type CastMember = {
   archetype: string;
   color: string;
   runtime: string;
+  portrait: string;
 };
 
 export const productCopy = {
@@ -24,10 +25,10 @@ export const productCopy = {
 } as const;
 
 export const defaultCast: CastMember[] = [
-  { id: "hana", name: "Hana", role: "The Empath", age: 23, archetype: "Warm observer", color: "#c18b7e", runtime: "Host-funded / Mock" },
-  { id: "rei", name: "Rei", role: "The Analyst", age: 25, archetype: "Careful reasoner", color: "#637599", runtime: "Host-funded / Mock" },
-  { id: "mira", name: "Mira", role: "The Trickster", age: 21, archetype: "Playful disruptor", color: "#a47eb3", runtime: "Bring-your-own / Mock" },
-  { id: "kagura", name: "Kagura", role: "The Observer", age: 26, archetype: "Quiet witness", color: "#627060", runtime: "Host-funded / Mock" },
+  { id: "hana", name: "Hana", role: "The Empath", age: 23, archetype: "Warm observer", color: "#c18b7e", runtime: "Host-funded / Mock", portrait: "/assets/characters/hana-neutral-v1.webp" },
+  { id: "rei", name: "Rei", role: "The Analyst", age: 25, archetype: "Careful reasoner", color: "#637599", runtime: "Host-funded / Mock", portrait: "/assets/characters/rei-neutral-v1.webp" },
+  { id: "mira", name: "Mira", role: "The Trickster", age: 21, archetype: "Playful disruptor", color: "#a47eb3", runtime: "Bring-your-own / Mock", portrait: "/assets/characters/mira-neutral-v1.webp" },
+  { id: "kagura", name: "Kagura", role: "The Observer", age: 26, archetype: "Quiet witness", color: "#627060", runtime: "Host-funded / Mock", portrait: "/assets/characters/kagura-neutral-v1.webp" },
 ];
 
 export const originalTimeline: TimelineEvent[] = [

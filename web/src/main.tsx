@@ -37,7 +37,8 @@ function EventRow({ event }: { event: TimelineEvent }) {
 
 function CastPortrait({ member, compact = false }: { member: (typeof defaultCast)[number]; compact?: boolean }) {
   return (
-    <div className={`cast-portrait ${compact ? "cast-portrait-compact" : ""}`} style={{ "--portrait-color": member.color } as CSSProperties}>
+    <div className={`cast-portrait has-art ${compact ? "cast-portrait-compact" : ""}`} style={{ "--portrait-color": member.color } as CSSProperties}>
+      <img className="portrait-art" src={member.portrait} alt={`${member.name}, ${member.role}`} />
       <span className="portrait-halo" aria-hidden="true" />
       <span className="portrait-head" aria-hidden="true" />
       <span className="portrait-body" aria-hidden="true" />
