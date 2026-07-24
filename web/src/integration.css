@@ -1,0 +1,54 @@
+.integration-shell { position:relative; z-index:1; max-width:1300px; margin:clamp(25px,4vw,60px) auto; }
+.integration-heading { display:flex; justify-content:space-between; gap:24px; align-items:start; padding:28px 32px; background:#f6ead7; border:1px solid #d5c3ac; box-shadow:5px 7px 0 #29233631; }
+.integration-heading h2 { margin:4px 0 8px; font-size:clamp(1.7rem,3vw,2.45rem); }
+.integration-heading p:last-child { margin:0; color:#716273; }
+.integration-heading button, .integration-card button, .local-lobby-controls button, .lobby-footer-actions button { border:0; padding:10px 13px; background:#76586f; color:#fff6e9; box-shadow:2px 3px 0 #362b4030; }
+.integration-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:20px; }
+.integration-card { padding:24px; background:#f6ead7; border:1px solid #d5c3ac; box-shadow:5px 7px 0 #29233631; }
+.integration-card:nth-child(2) { transform:rotate(.2deg); }
+.integration-card h3 { margin:4px 0 14px; font-size:1.5rem; }
+.integration-card dl { margin:0; }
+.integration-card dl div { display:flex; justify-content:space-between; gap:20px; padding:8px 0; border-top:1px dashed #cbb8aa; }
+.integration-card dt { color:#766876; }
+.integration-card dd { margin:0; font-family:"DM Mono",monospace; font-size:.72rem; text-align:right; }
+.runtime-lab { grid-column:1/-1; }
+.runtime-lab label, .local-lobby-controls label, .file-control { display:grid; gap:5px; margin:12px 0; color:#6e6070; font:.68rem "DM Mono",monospace; }
+.runtime-lab input, .runtime-lab select, .local-lobby-controls input, .local-lobby-controls select { width:100%; padding:9px 10px; border:1px solid #cbb8aa; background:#fff8eb; color:#413647; font:inherit; }
+.runtime-lab pre { max-height:320px; overflow:auto; margin-top:16px; padding:14px; background:#302b3c; color:#f3eadf; font:.7rem/1.5 "DM Mono",monospace; white-space:pre-wrap; }
+.integration-error { position:relative; z-index:1; max-width:1000px; margin:15px auto; padding:12px 15px; color:#722f42; background:#f4d8dc; border:1px solid #ca909d; }
+.asset-list { list-style:none; margin:15px 0 0; padding:0; }
+.asset-list li { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px dashed #cbb8aa; }
+.asset-list span { min-width:0; overflow-wrap:anywhere; }
+.asset-list small { display:block; margin-top:3px; color:#796d7e; font:.61rem "DM Mono",monospace; }
+.asset-list button { white-space:nowrap; font-size:.7rem; }
+
+.local-lobby-controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin:22px 0; padding:14px 17px; background:#ead9c4; }
+.local-lobby-controls label { min-width:220px; margin:0; flex:1; }
+.local-lobby-controls button { min-height:38px; }
+.local-lobby-avatar { width:76px; height:100px; flex:0 0 76px; object-fit:cover; object-position:50% 15%; border:3px solid #f7ead8; }
+.lobby-ready-state { margin-left:auto; padding:7px 9px; border:1px solid #bda998; background:#eee1cf; color:#66596a; font:.65rem "DM Mono",monospace; white-space:nowrap; }
+.lobby-ready-state.is-ready, .lobby-footer-actions button.is-ready { background:#d9e7d5; color:#3f6650; border-color:#a9c39f; }
+.lobby-footer-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; }
+.lobby-footer-actions .start-run { padding:13px 17px; background:#8e5e7a; }
+.manifest-result { display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; margin-top:18px; padding:15px 18px; background:#dfe8d6; border:1px solid #adc09e; }
+.manifest-result .note-label { flex-basis:100%; }
+.manifest-result strong { font-family:"DM Mono",monospace; font-size:.75rem; overflow-wrap:anywhere; }
+.manifest-result span { color:#4d6653; }
+
+@media (max-width: 850px) {
+  .integration-heading { display:block; }
+  .integration-heading button { margin-top:16px; }
+  .integration-grid { grid-template-columns:1fr; }
+  .runtime-lab { grid-column:auto; }
+  .lobby-footer-actions { justify-content:stretch; margin-top:14px; }
+  .lobby-footer-actions button { flex:1; }
+}
+
+@media (max-width: 560px) {
+  .integration-heading, .integration-card { padding:18px; }
+  .local-lobby-controls { display:block; }
+  .local-lobby-controls button { width:100%; margin-top:9px; }
+  .lobby-card { align-items:flex-start; }
+  .local-lobby-avatar { width:58px; height:78px; flex-basis:58px; }
+  .lobby-ready-state { position:absolute; right:8px; top:8px; }
+}
