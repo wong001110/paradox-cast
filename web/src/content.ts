@@ -4,6 +4,11 @@ export type TimelineEvent = {
   kind: "movement" | "observation" | "dialogue" | "intervention";
   title: string;
   detail: string;
+  characterId?: string;
+  speakerId?: string;
+  locationId?: string;
+  content?: string;
+  source?: string;
 };
 
 export type CastMember = {
@@ -32,17 +37,17 @@ export const defaultCast: CastMember[] = [
 ];
 
 export const originalTimeline: TimelineEvent[] = [
-  { id: "e1", time: "19:10", kind: "movement", title: "Rei leaves the lounge", detail: "Route: Safehouse Lounge → Old Station · 8 min" },
-  { id: "e2", time: "19:14", kind: "observation", title: "Hana notices a torn ticket", detail: "Source: café table · confidence: medium" },
-  { id: "e3", time: "19:18", kind: "dialogue", title: "Mira overhears half a call", detail: "Partial observation near the east corridor" },
-  { id: "e4", time: "19:22", kind: "dialogue", title: "Rei: “The date cannot be yesterday.”", detail: "Conversation at Old Station" },
+  { id: "e1", time: "19:10", kind: "movement", title: "Rei leaves the lounge", detail: "Route: Safehouse Lounge → Old Station · 8 min", characterId: "rei", locationId: "lounge", content: "Rei leaves the Safehouse Lounge for the Old Station." },
+  { id: "e2", time: "19:14", kind: "observation", title: "Hana notices a torn ticket", detail: "Source: café table · confidence: medium", characterId: "hana", locationId: "lounge", content: "A torn train ticket says yesterday.", source: "direct_observation" },
+  { id: "e3", time: "19:18", kind: "dialogue", title: "Mira overhears half a call", detail: "Partial observation near the east corridor", characterId: "mira", speakerId: "mira", locationId: "cafe", content: "I only heard half of the call.", source: "overheard" },
+  { id: "e4", time: "19:22", kind: "dialogue", title: "Rei: “The date cannot be yesterday.”", detail: "Conversation at Old Station", speakerId: "rei", locationId: "station", content: "The date cannot be yesterday." },
 ];
 
 export const branchedTimeline: TimelineEvent[] = [
-  { id: "b1", time: "19:10", kind: "intervention", title: "Evidence is revealed to Hana", detail: "External intervention · ticket is delivered at the lounge" },
-  { id: "b2", time: "19:12", kind: "movement", title: "Hana redirects Rei", detail: "Route changes to Café Nocturne · 5 min" },
-  { id: "b3", time: "19:16", kind: "observation", title: "Rei and Mira cross paths", detail: "Encounter resolved by the simulation kernel" },
-  { id: "b4", time: "19:20", kind: "dialogue", title: "Mira shares the call fragment", detail: "New information source: Mira · confidence: medium" },
+  { id: "b1", time: "19:10", kind: "intervention", title: "Evidence is revealed to Hana", detail: "External intervention · ticket is delivered at the lounge", characterId: "hana", locationId: "lounge", content: "The ticket reaches Hana earlier through an external delivery.", source: "external_intervention" },
+  { id: "b2", time: "19:12", kind: "movement", title: "Hana redirects Rei", detail: "Route changes to Café Nocturne · 5 min", characterId: "rei", locationId: "lounge", content: "Rei changes course toward Café Nocturne." },
+  { id: "b3", time: "19:16", kind: "observation", title: "Rei and Mira cross paths", detail: "Encounter resolved by the simulation kernel", characterId: "rei", locationId: "cafe", content: "Rei and Mira cross paths on the route." },
+  { id: "b4", time: "19:20", kind: "dialogue", title: "Mira shares the call fragment", detail: "New information source: Mira · confidence: medium", speakerId: "mira", locationId: "cafe", content: "I only heard half of the call.", source: "direct_dialogue" },
 ];
 
 export const adminSummary = [
