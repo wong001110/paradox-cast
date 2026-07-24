@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { useMemo, useState, type CSSProperties } from "react";
 import "./styles.css";
+import { startDemoRun, timelineFromSimulation, type DemoRun } from "./api";
 import {
   adminSummary,
   branchedTimeline,
@@ -44,11 +45,11 @@ function CastPortrait({ member, compact = false }: { member: (typeof defaultCast
   );
 }
 
-function Player() {
+function Player({ events }: { events: TimelineEvent[] }) {
   const [entry, setEntry] = useState(0);
-  const event = originalTimeline[entry]!;
+  const event = events[entry]!;
   const speaker = entry === 3 ? defaultCast[1] : defaultCast[0];
-  const next = () => setEntry((current) => (current + 1) % originalTimeline.length);
+  const next = () => setEntry((current) => (current + 1) % events.length);
 
   return (
     <section className="player-layout" aria-label="Visual novel case player">
@@ -93,8 +94,13 @@ function Timeline({ events, label }: { events: TimelineEvent[]; label: string })
   return <section className="timeline-card"><header><p className="note-label">{label}</p><h2>{productCopy.caseTitle}</h2></header><ol className="event-list">{events.map((event) => <EventRow key={event.id} event={event} />)}</ol></section>;
 }
 
-function Compare() {
-  return <section className="compare-shell"><div className="compare-heading"><p className="eyebrow">Frozen snapshot · 19:10</p><h2>One external change, two explainable timelines.</h2><p>The simulation records source, confidence, timing, route, and encounter effects rather than rewriting private memories.</p></div><div className="compare-grid"><Timeline label="A · Original" events={originalTimeline} /><Timeline label="B · Ticket revealed" events={branchedTimeline} /></div><aside className="difference-note"><p className="note-label">Divergence notes</p><ul>{differenceSummary.map((difference) => <li key={difference}>{difference}</li>)}</ul></aside></section>;
+function Compare({ original, branched, live }: { original: TimelineEvent[]; branched: TimelineEvent[]; live: DemoRun | null }) {
+  const differences = live ? [
+    `Run manifest: ${live.case.manifest_id.slice(0, 8)} · lobby ${live.case.lobby_code}`,
+    `${live.divergence.added_events} added and ${live.divergence.removed_events} removed simulation events.`,
+    live.divergence.final_state_changed ? "The final character state diverged." : "The event sequence changed without altering the final state.",
+  ] : differenceSummary;
+  return <section className="compare-shell"><div className="compare-heading"><p className="eyebrow">Frozen snapshot · {live ? `Seed ${live.case.seed}` : "19:10"}</p><h2>One external change, two explainable timelines.</h2><p>The simulation records source, confidence, timing, route, and encounter effects rather than rewriting private memories.</p></div><div className="compare-grid"><Timeline label="A · Original" events={original} /><Timeline label="B · External delay" events={branched} /></div><aside className="difference-note"><p className="note-label">Divergence notes</p><ul>{differences.map((difference) => <li key={difference}>{difference}</li>)}</ul></aside></section>;
 }
 
 function Admin() {
@@ -103,21 +109,31 @@ function Admin() {
 
 function App() {
   const [view, setView] = useState<View>("player");
+  const [liveRun, setLiveRun] = useState<DemoRun | null>(null);
+  const [runState, setRunState] = useState<"idle" | "loading" | "error">("idle");
+  const original = liveRun ? timelineFromSimulation(liveRun.original.events, "original") : originalTimeline;
+  const branched = liveRun ? timelineFromSimulation(liveRun.branched.events, "branch") : branchedTimeline;
+  const runDemo = async () => {
+    setRunState("loading");
+    try { setLiveRun(await startDemoRun()); setView("compare"); setRunState("idle"); }
+    catch { setRunState("error"); }
+  };
   const currentView = useMemo(() => {
-    if (view === "timeline") return <Timeline label="Original timeline" events={originalTimeline} />;
-    if (view === "compare") return <Compare />;
+    if (view === "timeline") return <Timeline label={liveRun ? "Live simulation timeline" : "Original timeline"} events={original} />;
+    if (view === "compare") return <Compare original={original} branched={branched} live={liveRun} />;
     if (view === "admin") return <Admin />;
-    return <Player />;
-  }, [view]);
+    return <Player events={original} />;
+  }, [view, original, branched, liveRun]);
 
   return <main className="app-shell">
     <header className="topbar">
       <a className="brand" href="#top" onClick={(event) => { event.preventDefault(); setView("player"); }}><span>Paradox</span><em>Cast</em><small>AI Timeline Mystery Creator</small></a>
       <nav aria-label="Application sections">{(Object.keys(viewLabels) as View[]).map((item) => <button key={item} type="button" className={view === item ? "active" : ""} onClick={() => setView(item)}>{viewLabels[item]}</button>)}</nav>
-      <button className="publish-button" type="button">Run manifest <span>↗</span></button>
+      <button className="publish-button" type="button" onClick={runDemo} disabled={runState === "loading"}>{runState === "loading" ? "Starting…" : "Run demo case"} <span>↗</span></button>
     </header>
     <section className="case-ribbon"><p><span>Case file</span>{productCopy.caseTitle}</p><div className="timeline-pips" aria-label="Current point in the timeline"><i /><i /><i className="current" /><i /><i /></div><p className="run-id">PXC-APR14-001 · Seed locked</p></section>
     {currentView}
+    {runState === "error" && <p className="run-error">Could not reach the FastAPI server. Start the backend, then try the demo again.</p>}
     <footer className="app-footer"><span>Visual-novel presentation · Python simulation stays authoritative</span><span>Official MVP scrapbook theme</span></footer>
   </main>;
 }

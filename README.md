@@ -30,6 +30,12 @@ npm run dev
 
 The Vite app proxies `/api` to the backend during local development.
 
+## Test the real demo loop
+
+Start the backend and frontend in separate terminals, then select **Run demo case** in the upper-right of the app. The button calls `POST /api/demo/run`, which creates demo Character Cards, a Scenario, Lobby, ready cast, and frozen Run Manifest before returning the authoritative original simulation and an explainable branched replay. The UI then switches to the live A/B comparison.
+
+The demo deliberately uses the deterministic mock runtime and needs no provider API key.
+
 ## Architecture
 
 - `backend/`: FastAPI, SQLAlchemy, Pydantic and the authoritative simulation kernel.
@@ -48,4 +54,3 @@ make web-test
 ```
 
 See [`docs/TAKE-NOTE.md`](docs/TAKE-NOTE.md) for environment-sensitive verification.
-

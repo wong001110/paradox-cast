@@ -142,3 +142,8 @@ class LobbyInviteCreate(BaseModel):
 class ManifestStartRequest(BaseModel):
     seed: int | None = Field(default=None, ge=0, le=2_147_483_647)
     intervention_rules: dict = Field(default_factory=dict)
+
+
+class BranchReplayRequest(BaseModel):
+    simulation: SimulationRequest
+    interventions: list[dict] = Field(default_factory=list)
