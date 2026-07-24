@@ -5,6 +5,7 @@ export type TimelineEvent = {
   title: string;
   detail: string;
   characterId?: string;
+  characterIds?: string[];
   speakerId?: string;
   locationId?: string;
   content?: string;
@@ -46,7 +47,7 @@ export const originalTimeline: TimelineEvent[] = [
 export const branchedTimeline: TimelineEvent[] = [
   { id: "b1", time: "19:10", kind: "intervention", title: "Evidence is revealed to Hana", detail: "External intervention · ticket is delivered at the lounge", characterId: "hana", locationId: "lounge", content: "The ticket reaches Hana earlier through an external delivery.", source: "external_intervention" },
   { id: "b2", time: "19:12", kind: "movement", title: "Hana redirects Rei", detail: "Route changes to Café Nocturne · 5 min", characterId: "rei", locationId: "lounge", content: "Rei changes course toward Café Nocturne." },
-  { id: "b3", time: "19:16", kind: "observation", title: "Rei and Mira cross paths", detail: "Encounter resolved by the simulation kernel", characterId: "rei", locationId: "cafe", content: "Rei and Mira cross paths on the route." },
+  { id: "b3", time: "19:16", kind: "observation", title: "Rei and Mira cross paths", detail: "Encounter resolved by the simulation kernel", characterId: "rei", characterIds: ["rei", "mira"], locationId: "cafe", content: "Rei and Mira cross paths on the route." },
   { id: "b4", time: "19:20", kind: "dialogue", title: "Mira shares the call fragment", detail: "New information source: Mira · confidence: medium", speakerId: "mira", locationId: "cafe", content: "I only heard half of the call.", source: "direct_dialogue" },
 ];
 
