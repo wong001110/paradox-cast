@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paradox-cast-api"
+version = "0.1.0"
+description = "Authoritative timeline simulation API for Paradox Cast"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.139,<0.140",
+  "pydantic>=2.13,<3",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn[standard]>=0.51,<0.52",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.28,<0.29", "pytest>=9.1,<10"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
