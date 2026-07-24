@@ -32,7 +32,9 @@ The Vite app proxies `/api` to the backend during local development.
 
 ## Test the real demo loop
 
-Start the backend and frontend in separate terminals, then select **Run demo case** in the upper-right of the app. The button calls `POST /api/demo/run`, which creates demo Character Cards, a Scenario, Lobby, ready cast, and frozen Run Manifest before returning the authoritative original simulation and an explainable branched replay. The UI then switches to the live A/B comparison.
+Start the backend and frontend in separate terminals, then select **Run demo case** in the upper-right of the app. The button calls `POST /api/demo/run`, which creates demo Character Cards, a Scenario, Lobby, ready cast, and frozen Run Manifest before returning the authoritative original simulation and an explainable branched replay.
+
+The UI opens the visual-novel player with the live manifest. Use **A · Original** and **B · Branch** to replay every simulation event in order, including character focus, location, source, timestamp, route or encounter metadata, and the external intervention that produced the branch. The separate Timeline and A/B Compare views remain available for inspection.
 
 The demo deliberately uses the deterministic mock runtime and needs no provider API key.
 
