@@ -11,6 +11,7 @@ dependencies = [
   "fastapi>=0.139,<0.140",
   "pydantic>=2.13,<3",
   "sqlalchemy>=2.0,<3",
+  "cryptography>=46,<47",
   "uvicorn[standard]>=0.51,<0.52",
 ]
 
@@ -22,4 +23,3 @@ testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]
-
