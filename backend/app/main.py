@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from . import models
 from .character_routes import router as character_router
+from .lobby_routes import router as lobby_router
+from .scenario_routes import router as scenario_router
+from .runtime_routes import router as runtime_router
+from .simulation_routes import router as simulation_router
 
 app = FastAPI(
     title="Paradox Cast API",
@@ -19,6 +23,10 @@ app.add_middleware(
 )
 Base.metadata.create_all(bind=engine)
 app.include_router(character_router)
+app.include_router(scenario_router)
+app.include_router(lobby_router)
+app.include_router(runtime_router)
+app.include_router(simulation_router)
 
 
 @app.get("/api/health", tags=["system"])
