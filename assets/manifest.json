@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "theme": "official-mvp-scrapbook",
+  "storage_target": "cloudflare-r2",
+  "asset_version": "v1-draft",
+  "fallbacks": {
+    "portrait": "web/src/styles.css#cast-portrait",
+    "background": "web/src/styles.css#stage-background",
+    "paper_texture": "assets/decor/paper-grain.svg"
+  },
+  "required_coverage": {
+    "characters": ["hana", "rei", "mira", "kagura"],
+    "expressions": ["neutral", "happy", "thinking", "concerned"],
+    "backgrounds": ["safehouse-lounge-day", "safehouse-lounge-night", "old-station-evening", "cafe-nocturne"]
+  },
+  "objects": [
+    { "path": "decor/paper-grain.svg", "kind": "decorative-fallback", "visibility": "public", "status": "ready" },
+    { "path": "decor/washi-tape.svg", "kind": "decorative-fallback", "visibility": "public", "status": "ready" },
+    { "path": "prompts/default-cast.json", "kind": "prompt-manifest", "visibility": "repository", "status": "ready" }
+  ],
+  "validation": {
+    "must_have_neutral_fallback": true,
+    "must_not_publish_without_contact_sheet": true,
+    "must_not_ship_raw_provider_or_r2_credentials": true
+  }
+}
