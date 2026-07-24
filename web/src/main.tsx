@@ -12,10 +12,11 @@ import {
   type TimelineEvent,
 } from "./content";
 
-type View = "player" | "timeline" | "compare" | "admin";
+type View = "player" | "lobby" | "timeline" | "compare" | "admin";
 
 const viewLabels: Record<View, string> = {
   player: "Case player",
+  lobby: "Lobby",
   timeline: "Timeline",
   compare: "A/B compare",
   admin: "Admin overview",
@@ -94,6 +95,29 @@ function Timeline({ events, label }: { events: TimelineEvent[]; label: string })
   return <section className="timeline-card"><header><p className="note-label">{label}</p><h2>{productCopy.caseTitle}</h2></header><ol className="event-list">{events.map((event) => <EventRow key={event.id} event={event} />)}</ol></section>;
 }
 
+function Lobby({ onStart, loading, live }: { onStart: () => Promise<void>; loading: boolean; live: DemoRun | null }) {
+  const cast = defaultCast.slice(0, 3);
+  const [ready, setReady] = useState<Record<string, boolean>>({ hana: true, rei: true, mira: true });
+  const allReady = cast.every((member) => ready[member.id]);
+
+  return <section className="lobby-shell" aria-label="Online lobby">
+    <header className="lobby-heading">
+      <div><p className="eyebrow">Online lobby · Host / Director</p><h2>{productCopy.caseTitle}</h2><p>Choose the cast, bind an approved runtime, and lock one explainable timeline.</p></div>
+      <aside className="join-code"><p className="note-label">Join code</p><strong>{live?.case.lobby_code ?? "PXC·14TH"}</strong><span>{live ? "Latest run created" : "Unlisted demo lobby"}</span></aside>
+    </header>
+    <div className="lobby-meta"><span>Scenario: The Vanishing of April 14th</span><span>Visibility: Unlisted</span><span>Runtime funding: Host-funded</span><span>Participants: 3 / 4</span></div>
+    <div className="lobby-cast">
+      {cast.map((member, index) => <article className="lobby-card" key={member.id}>
+        <span className="slot-number">{index + 1}</span><CastPortrait member={member} compact />
+        <div><p className="note-label">{index === 0 ? "Host · Director" : "Participant"}</p><h3>{member.name}</h3><p>{member.role}</p><label className="runtime-select">AI runtime<select aria-label={`${member.name} runtime`} defaultValue="host"><option value="host">Mock Detective · Host funded</option><option value="byo">Personal runtime · BYO grant</option></select></label></div>
+        <button className={`ready-toggle ${ready[member.id] ? "is-ready" : ""}`} type="button" onClick={() => setReady((current) => ({ ...current, [member.id]: !current[member.id] }))}>{ready[member.id] ? "✓ Ready" : "Mark ready"}</button>
+      </article>)}
+      <article className="empty-slot"><span>4</span><strong>Open cast slot</strong><p>Invite a participant or keep this role in the deterministic demo cast.</p></article>
+    </div>
+    <footer className="lobby-footer"><div><p className="note-label">Run manifest</p><strong>{allReady ? "Ready to freeze scenario, cast, runtimes, seed and asset versions." : "Every selected participant must be ready before the manifest can lock."}</strong></div><button className="start-run" type="button" disabled={!allReady || loading} onClick={onStart}>{loading ? "Locking manifest…" : "Start run →"}</button></footer>
+  </section>;
+}
+
 function Compare({ original, branched, live }: { original: TimelineEvent[]; branched: TimelineEvent[]; live: DemoRun | null }) {
   const differences = live ? [
     `Run manifest: ${live.case.manifest_id.slice(0, 8)} · lobby ${live.case.lobby_code}`,
@@ -119,11 +143,12 @@ function App() {
     catch { setRunState("error"); }
   };
   const currentView = useMemo(() => {
+    if (view === "lobby") return <Lobby onStart={runDemo} loading={runState === "loading"} live={liveRun} />;
     if (view === "timeline") return <Timeline label={liveRun ? "Live simulation timeline" : "Original timeline"} events={original} />;
     if (view === "compare") return <Compare original={original} branched={branched} live={liveRun} />;
     if (view === "admin") return <Admin />;
     return <Player events={original} />;
-  }, [view, original, branched, liveRun]);
+  }, [view, original, branched, liveRun, runState]);
 
   return <main className="app-shell">
     <header className="topbar">
