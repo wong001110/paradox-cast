@@ -21,8 +21,15 @@ def system_status() -> dict:
         database_reachable = True
     except Exception as error:  # status endpoint deliberately avoids leaking connection data
         database_error = type(error).__name__
+    app_env = os.getenv("APP_ENV", "development")
+    configured_local = os.getenv("LOCAL_BOOTSTRAP_ENABLED")
+    local_enabled = (
+        configured_local.lower() in {"1", "true", "yes"}
+        if configured_local is not None
+        else app_env.lower() != "production"
+    )
     return {
-        "app_env": os.getenv("APP_ENV", "development"),
+        "app_env": app_env,
         "database": {
             "dialect": engine.url.drivername,
             "configured": bool(DATABASE_URL),
@@ -33,6 +40,5 @@ def system_status() -> dict:
         "credential_encryption": {
             "persistent_key_configured": bool(os.getenv("PARADOX_CAST_CREDENTIAL_KEY")),
         },
-        "local_bootstrap_enabled": os.getenv("LOCAL_BOOTSTRAP_ENABLED", "true").lower()
-        in {"1", "true", "yes"},
+        "local_bootstrap_enabled": local_enabled,
     }

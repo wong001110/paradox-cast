@@ -170,3 +170,7 @@ def decide(
         )
     except RuntimeProviderError as error:
         raise HTTPException(502, str(error)) from error
+
+
+# Backward-compatible function name retained for direct unit-test imports.
+mock_decide = decide

@@ -16,7 +16,7 @@ import httpx
 from .models import RuntimeProfile
 
 
-class RuntimeProviderError(RuntimeError):
+class RuntimeProviderError(ValueError):
     pass
 
 
@@ -232,11 +232,17 @@ def provider_settings(provider: str, secret: str) -> OpenAICompatibleSettings:
 
 
 def provider_for(
-    profile: RuntimeProfile,
+    profile: RuntimeProfile | str,
     credential_secret: str | None = None,
     *,
     transport: httpx.BaseTransport | None = None,
 ):
+    # Preserve the original MVP helper shape for tests and callers that only
+    # request the deterministic adapter by name.
+    if isinstance(profile, str):
+        if profile == "mock":
+            return MockRuntimeProvider()
+        raise RuntimeProviderError(f"Unsupported runtime provider: {profile}")
     if profile.provider == "mock":
         return MockRuntimeProvider()
     settings = provider_settings(profile.provider, credential_secret or "")
