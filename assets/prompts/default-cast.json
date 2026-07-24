@@ -1,0 +1,12 @@
+{
+  "style_anchor": "Modern anime scrapbook journal visual novel; soft pastel palette; light everyday mystery; warm paper and subtle ink texture; non-sexualized adult characters.",
+  "negative_prompt": "minor, child, school uniform, sexualized pose, lingerie, logo, watermark, text, extra fingers, cropped face, identity drift",
+  "characters": [
+    { "id": "hana", "age": 23, "role": "The Empath", "identity": "warm chestnut wavy hair, cream knit cardigan, notebook, gentle brown eyes" },
+    { "id": "rei", "age": 25, "role": "The Analyst", "identity": "short navy-black bob, slate blue overshirt, dark turtleneck, thoughtful blue eyes" },
+    { "id": "mira", "age": 21, "role": "The Trickster", "identity": "long pale lavender twin waves, layered white jacket and muted purple skirt, playful violet eyes" },
+    { "id": "kagura", "age": 26, "role": "The Observer", "identity": "long dark hair, moss-grey cardigan and black skirt, calm green eyes" }
+  ],
+  "expressions": ["neutral", "happy", "thinking", "concerned"],
+  "background_prompt": "Modern anime visual-novel background, {location}, warm soft evening lighting, scrapbook mystery atmosphere, readable staging area in lower middle for dialogue box, no characters, no text, no logos."
+}
