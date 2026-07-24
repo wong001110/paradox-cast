@@ -1,21 +1,125 @@
 import { createRoot } from "react-dom/client";
+import { useMemo, useState, type CSSProperties } from "react";
 import "./styles.css";
-import { productCopy } from "./content";
+import {
+  adminSummary,
+  branchedTimeline,
+  defaultCast,
+  differenceSummary,
+  originalTimeline,
+  productCopy,
+  type TimelineEvent,
+} from "./content";
+
+type View = "player" | "timeline" | "compare" | "admin";
+
+const viewLabels: Record<View, string> = {
+  player: "Case player",
+  timeline: "Timeline",
+  compare: "A/B compare",
+  admin: "Admin overview",
+};
+
+function EventRow({ event }: { event: TimelineEvent }) {
+  return (
+    <li className={`event-row event-${event.kind}`}>
+      <time>{event.time}</time>
+      <span className="event-dot" aria-hidden="true" />
+      <div>
+        <strong>{event.title}</strong>
+        <p>{event.detail}</p>
+      </div>
+    </li>
+  );
+}
+
+function CastPortrait({ member, compact = false }: { member: (typeof defaultCast)[number]; compact?: boolean }) {
+  return (
+    <div className={`cast-portrait ${compact ? "cast-portrait-compact" : ""}`} style={{ "--portrait-color": member.color } as CSSProperties}>
+      <span className="portrait-halo" aria-hidden="true" />
+      <span className="portrait-head" aria-hidden="true" />
+      <span className="portrait-body" aria-hidden="true" />
+      <span className="portrait-initial">{member.name.slice(0, 1)}</span>
+    </div>
+  );
+}
+
+function Player() {
+  const [entry, setEntry] = useState(0);
+  const event = originalTimeline[entry]!;
+  const speaker = entry === 3 ? defaultCast[1] : defaultCast[0];
+  const next = () => setEntry((current) => (current + 1) % originalTimeline.length);
+
+  return (
+    <section className="player-layout" aria-label="Visual novel case player">
+      <aside className="paper-side left-side">
+        <p className="note-label">Location</p>
+        <h2>Safehouse Lounge</h2>
+        <div className="polaroid small-scene" aria-label="Illustrated night lounge fallback" />
+        <div className="note-card">
+          <p className="note-label">Today’s mood</p>
+          <strong>Curious</strong>
+          <p>○ ○ ○</p>
+        </div>
+      </aside>
+      <section className="stage" aria-live="polite">
+        <div className="stage-background">
+          <span className="window-glow" />
+          <span className="bookshelf" />
+          <span className="desk-lamp" />
+        </div>
+        <div className="stage-cast">
+          {defaultCast.slice(0, 3).map((member) => <CastPortrait key={member.id} member={member} />)}
+        </div>
+        <article className="dialogue-box">
+          <span className="speaker-tag" style={{ backgroundColor: speaker.color }}>{speaker.name}</span>
+          <p>{event.kind === "dialogue" ? "If this photo was taken five years ago, why does the train ticket say yesterday?" : event.title}</p>
+          <button type="button" onClick={next}>Continue <span aria-hidden="true">→</span></button>
+        </article>
+      </section>
+      <aside className="paper-side notes-side">
+        <p className="note-label">Investigation notes</p>
+        <h2>Key fragments</h2>
+        <ul className="fragment-list">
+          <li>Old photo</li><li>Train ticket</li><li>Coffee receipt</li><li>Handwritten note</li>
+        </ul>
+        <div className="objective-note"><p className="note-label">Current objective</p><strong>Trace the missing hour.</strong></div>
+      </aside>
+    </section>
+  );
+}
+
+function Timeline({ events, label }: { events: TimelineEvent[]; label: string }) {
+  return <section className="timeline-card"><header><p className="note-label">{label}</p><h2>{productCopy.caseTitle}</h2></header><ol className="event-list">{events.map((event) => <EventRow key={event.id} event={event} />)}</ol></section>;
+}
+
+function Compare() {
+  return <section className="compare-shell"><div className="compare-heading"><p className="eyebrow">Frozen snapshot · 19:10</p><h2>One external change, two explainable timelines.</h2><p>The simulation records source, confidence, timing, route, and encounter effects rather than rewriting private memories.</p></div><div className="compare-grid"><Timeline label="A · Original" events={originalTimeline} /><Timeline label="B · Ticket revealed" events={branchedTimeline} /></div><aside className="difference-note"><p className="note-label">Divergence notes</p><ul>{differenceSummary.map((difference) => <li key={difference}>{difference}</li>)}</ul></aside></section>;
+}
+
+function Admin() {
+  return <section className="admin-shell"><header className="admin-header"><div><p className="eyebrow">Restricted surface · overview only</p><h2>Admin Console</h2><p>Platform health and moderation signals. Private scenarios and character content are not displayed by default.</p></div><span className="system-pill">● System healthy</span></header><div className="admin-grid">{adminSummary.map(([label, value, detail]) => <article className="metric-card" key={label}><p>{label}</p><strong>{value}</strong><small>{detail}</small></article>)}</div><div className="admin-lists"><article className="admin-panel"><h3>Recent audit events</h3><ul><li><b>Run manifest locked</b><span>PXC-APR14-001 · 19:09</span></li><li><b>Public card flagged for review</b><span>Visibility unchanged · 18:46</span></li><li><b>Mock runtime fallback used</b><span>No credential value logged · 18:32</span></li></ul></article><article className="admin-panel"><h3>Moderation queue</h3><p>No private content is listed here. Review requires an explicit, audited moderation action.</p><button type="button">Open public-content queue</button></article></div></section>;
+}
 
 function App() {
-  return (
-    <main className="app-shell">
-      <section className="masthead">
-        <p className="eyebrow">An AI Timeline Mystery Creator</p>
-        <h1>Paradox <em>Cast</em></h1>
-        <p>{productCopy.tagline}</p>
-      </section>
-      <section className="paper-card">
-        <h2>Project foundation is ready</h2>
-        <p>{productCopy.foundation}</p>
-      </section>
-    </main>
-  );
+  const [view, setView] = useState<View>("player");
+  const currentView = useMemo(() => {
+    if (view === "timeline") return <Timeline label="Original timeline" events={originalTimeline} />;
+    if (view === "compare") return <Compare />;
+    if (view === "admin") return <Admin />;
+    return <Player />;
+  }, [view]);
+
+  return <main className="app-shell">
+    <header className="topbar">
+      <a className="brand" href="#top" onClick={(event) => { event.preventDefault(); setView("player"); }}><span>Paradox</span><em>Cast</em><small>AI Timeline Mystery Creator</small></a>
+      <nav aria-label="Application sections">{(Object.keys(viewLabels) as View[]).map((item) => <button key={item} type="button" className={view === item ? "active" : ""} onClick={() => setView(item)}>{viewLabels[item]}</button>)}</nav>
+      <button className="publish-button" type="button">Run manifest <span>↗</span></button>
+    </header>
+    <section className="case-ribbon"><p><span>Case file</span>{productCopy.caseTitle}</p><div className="timeline-pips" aria-label="Current point in the timeline"><i /><i /><i className="current" /><i /><i /></div><p className="run-id">PXC-APR14-001 · Seed locked</p></section>
+    {currentView}
+    <footer className="app-footer"><span>Visual-novel presentation · Python simulation stays authoritative</span><span>Official MVP scrapbook theme</span></footer>
+  </main>;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
