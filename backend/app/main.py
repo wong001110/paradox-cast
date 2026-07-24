@@ -7,6 +7,7 @@ from .lobby_routes import router as lobby_router
 from .scenario_routes import router as scenario_router
 from .runtime_routes import router as runtime_router
 from .simulation_routes import router as simulation_router
+from .branching_routes import router as branching_router
 
 app = FastAPI(
     title="Paradox Cast API",
@@ -27,6 +28,7 @@ app.include_router(scenario_router)
 app.include_router(lobby_router)
 app.include_router(runtime_router)
 app.include_router(simulation_router)
+app.include_router(branching_router)
 
 
 @app.get("/api/health", tags=["system"])
