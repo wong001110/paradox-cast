@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 backend/.env
+backend/paradox_cast.db
 web/node_modules/
 web/dist/
 *.sqlite3
