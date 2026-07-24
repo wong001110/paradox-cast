@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import "./styles.css";
+import "./replay.css";
 import { startDemoRun, timelineFromSimulation, type DemoRun } from "./api";
 import {
   adminSummary,
@@ -13,6 +14,7 @@ import {
 } from "./content";
 
 type View = "player" | "lobby" | "timeline" | "compare" | "admin";
+type ReplayMode = "original" | "branch";
 
 const viewLabels: Record<View, string> = {
   player: "Case player",
@@ -21,6 +23,16 @@ const viewLabels: Record<View, string> = {
   compare: "A/B compare",
   admin: "Admin overview",
 };
+
+const locationNames: Record<string, string> = {
+  lounge: "Safehouse Lounge",
+  station: "Old Station",
+  cafe: "Café Nocturne",
+};
+
+const prettyId = (value: string) => value.replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const locationName = (locationId?: string) => locationId ? (locationNames[locationId] ?? prettyId(locationId)) : "Timeline Space";
+const sourceName = (source?: string) => source ? prettyId(source) : "Simulation kernel";
 
 function EventRow({ event }: { event: TimelineEvent }) {
   return (
@@ -35,10 +47,27 @@ function EventRow({ event }: { event: TimelineEvent }) {
   );
 }
 
-function CastPortrait({ member, compact = false }: { member: (typeof defaultCast)[number]; compact?: boolean }) {
+function CastPortrait({
+  member,
+  compact = false,
+  active,
+}: {
+  member: (typeof defaultCast)[number];
+  compact?: boolean;
+  active?: boolean;
+}) {
+  const activityClass = active === undefined ? "" : active ? " is-active" : " is-muted";
   return (
-    <div className={`cast-portrait has-art ${compact ? "cast-portrait-compact" : ""}`} style={{ "--portrait-color": member.color } as CSSProperties}>
-      <img className="portrait-art" src={member.portrait} alt={`${member.name}, ${member.role}`} />
+    <div className={`cast-portrait has-art${compact ? " cast-portrait-compact" : ""}${activityClass}`} style={{ "--portrait-color": member.color } as CSSProperties}>
+      <img
+        className="portrait-art"
+        src={member.portrait}
+        alt={`${member.name}, ${member.role}`}
+        onError={(event) => {
+          event.currentTarget.hidden = true;
+          event.currentTarget.parentElement?.classList.remove("has-art");
+        }}
+      />
       <span className="portrait-halo" aria-hidden="true" />
       <span className="portrait-head" aria-hidden="true" />
       <span className="portrait-body" aria-hidden="true" />
@@ -47,46 +76,109 @@ function CastPortrait({ member, compact = false }: { member: (typeof defaultCast
   );
 }
 
-function Player({ events }: { events: TimelineEvent[] }) {
+function Player({
+  original,
+  branched,
+  live,
+}: {
+  original: TimelineEvent[];
+  branched: TimelineEvent[];
+  live: DemoRun | null;
+}) {
+  const [mode, setMode] = useState<ReplayMode>("original");
   const [entry, setEntry] = useState(0);
-  const event = events[entry]!;
-  const speaker = entry === 3 ? defaultCast[1] : defaultCast[0];
-  const next = () => setEntry((current) => (current + 1) % events.length);
+  const events = mode === "branch" ? branched : original;
+  const safeEntry = Math.min(entry, Math.max(0, events.length - 1));
+  const event = events[safeEntry] ?? originalTimeline[0]!;
+  const actorId = event.speakerId ?? event.characterId ?? event.characterIds?.[0];
+  const actor = defaultCast.find((member) => member.id === actorId);
+  const activeIds = new Set(
+    [event.characterId, event.speakerId, ...(event.characterIds ?? [])]
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  useEffect(() => {
+    setMode("original");
+    setEntry(0);
+  }, [live?.case.manifest_id]);
+
+  const changeMode = (nextMode: ReplayMode) => {
+    setMode(nextMode);
+    setEntry(0);
+  };
+  const previous = () => setEntry((current) => Math.max(0, current - 1));
+  const next = () => setEntry((current) => current + 1 >= events.length ? 0 : current + 1);
 
   return (
     <section className="player-layout" aria-label="Visual novel case player">
       <aside className="paper-side left-side">
         <p className="note-label">Location</p>
-        <h2>Safehouse Lounge</h2>
-        <div className="polaroid small-scene" aria-label="Illustrated night lounge fallback" />
+        <h2>{locationName(event.locationId)}</h2>
+        <div className={`polaroid small-scene scene-${event.locationId ?? "timeline"}`} aria-label={`Illustrated ${locationName(event.locationId)} fallback`} />
         <div className="note-card">
-          <p className="note-label">Today’s mood</p>
-          <strong>Curious</strong>
-          <p>○ ○ ○</p>
+          <p className="note-label">Replay track</p>
+          <strong>{mode === "original" ? "A · Original" : "B · Branch"}</strong>
+          <p>{live ? "● Manifest locked" : "○ Preview data"}</p>
         </div>
       </aside>
-      <section className="stage" aria-live="polite">
+
+      <section className={`stage stage-${event.locationId ?? "timeline"}`} aria-live="polite">
         <div className="stage-background">
           <span className="window-glow" />
           <span className="bookshelf" />
           <span className="desk-lamp" />
         </div>
+
+        <header className="replay-toolbar">
+          <div>
+            <p className="note-label">Authoritative event replay</p>
+            <strong>{live ? `Seed ${live.case.seed} · ${live.case.manifest_id.slice(0, 8)}` : "Prepared MVP preview"}</strong>
+          </div>
+          <div className="replay-mode" aria-label="Replay timeline">
+            <button type="button" className={mode === "original" ? "active" : ""} aria-pressed={mode === "original"} onClick={() => changeMode("original")}>A · Original</button>
+            <button type="button" className={mode === "branch" ? "active" : ""} aria-pressed={mode === "branch"} onClick={() => changeMode("branch")}>B · Branch</button>
+          </div>
+        </header>
+
         <div className="stage-cast">
-          {defaultCast.slice(0, 3).map((member) => <CastPortrait key={member.id} member={member} />)}
+          {defaultCast.slice(0, 3).map((member) => (
+            <CastPortrait
+              key={member.id}
+              member={member}
+              active={activeIds.size === 0 ? undefined : activeIds.has(member.id)}
+            />
+          ))}
         </div>
-        <article className="dialogue-box">
-          <span className="speaker-tag" style={{ backgroundColor: speaker.color }}>{speaker.name}</span>
-          <p>{event.kind === "dialogue" ? "If this photo was taken five years ago, why does the train ticket say yesterday?" : event.title}</p>
-          <button type="button" onClick={next}>Continue <span aria-hidden="true">→</span></button>
+
+        <article className={`dialogue-box dialogue-${event.kind}`}>
+          <span className="speaker-tag" style={{ backgroundColor: actor?.color ?? "#76586f" }}>{actor?.name ?? "Timeline"}</span>
+          <div className="event-kicker">
+            <time>{event.time}</time>
+            <span>{prettyId(event.kind)}</span>
+            <span>{sourceName(event.source)}</span>
+          </div>
+          <p>{event.content ?? event.title}</p>
+          <small className="event-detail">{event.detail}</small>
+          <div className="dialogue-actions">
+            <button type="button" onClick={previous} disabled={safeEntry === 0}>← Back</button>
+            <span>{safeEntry + 1} / {events.length}</span>
+            <button type="button" onClick={next}>{safeEntry + 1 === events.length ? "Replay ↺" : "Continue →"}</button>
+          </div>
         </article>
       </section>
+
       <aside className="paper-side notes-side">
-        <p className="note-label">Investigation notes</p>
-        <h2>Key fragments</h2>
-        <ul className="fragment-list">
-          <li>Old photo</li><li>Train ticket</li><li>Coffee receipt</li><li>Handwritten note</li>
+        <p className="note-label">Event trace</p>
+        <h2>{event.title}</h2>
+        <ul className="fragment-list trace-list">
+          <li>{event.detail}</li>
+          <li>Source: {sourceName(event.source)}</li>
+          <li>Authority: deterministic Python simulation</li>
         </ul>
-        <div className="objective-note"><p className="note-label">Current objective</p><strong>Trace the missing hour.</strong></div>
+        <div className="objective-note">
+          <p className="note-label">Current objective</p>
+          <strong>Explain event {safeEntry + 1} of {events.length}.</strong>
+        </div>
       </aside>
     </section>
   );
@@ -136,28 +228,45 @@ function App() {
   const [view, setView] = useState<View>("player");
   const [liveRun, setLiveRun] = useState<DemoRun | null>(null);
   const [runState, setRunState] = useState<"idle" | "loading" | "error">("idle");
-  const original = liveRun ? timelineFromSimulation(liveRun.original.events, "original") : originalTimeline;
-  const branched = liveRun ? timelineFromSimulation(liveRun.branched.events, "branch") : branchedTimeline;
+  const original = useMemo(
+    () => liveRun ? timelineFromSimulation(liveRun.original.events, "original") : originalTimeline,
+    [liveRun],
+  );
+  const branched = useMemo(
+    () => liveRun ? timelineFromSimulation(liveRun.branched.events, "branch", liveRun.branched.interventions) : branchedTimeline,
+    [liveRun],
+  );
+
   const runDemo = async () => {
     setRunState("loading");
-    try { setLiveRun(await startDemoRun()); setView("compare"); setRunState("idle"); }
-    catch { setRunState("error"); }
+    try {
+      const run = await startDemoRun();
+      setLiveRun(run);
+      setView("player");
+      setRunState("idle");
+    } catch {
+      setRunState("error");
+    }
   };
-  const currentView = useMemo(() => {
-    if (view === "lobby") return <Lobby onStart={runDemo} loading={runState === "loading"} live={liveRun} />;
-    if (view === "timeline") return <Timeline label={liveRun ? "Live simulation timeline" : "Original timeline"} events={original} />;
-    if (view === "compare") return <Compare original={original} branched={branched} live={liveRun} />;
-    if (view === "admin") return <Admin />;
-    return <Player events={original} />;
-  }, [view, original, branched, liveRun, runState]);
+
+  let currentView;
+  if (view === "lobby") currentView = <Lobby onStart={runDemo} loading={runState === "loading"} live={liveRun} />;
+  else if (view === "timeline") currentView = <Timeline label={liveRun ? "Live simulation timeline" : "Original timeline"} events={original} />;
+  else if (view === "compare") currentView = <Compare original={original} branched={branched} live={liveRun} />;
+  else if (view === "admin") currentView = <Admin />;
+  else currentView = <Player original={original} branched={branched} live={liveRun} />;
+
+  const runIdentifier = liveRun
+    ? `${liveRun.case.manifest_id.slice(0, 8)} · Seed ${liveRun.case.seed}`
+    : "PXC-APR14-001 · Preview seed";
 
   return <main className="app-shell">
     <header className="topbar">
       <a className="brand" href="#top" onClick={(event) => { event.preventDefault(); setView("player"); }}><span>Paradox</span><em>Cast</em><small>AI Timeline Mystery Creator</small></a>
       <nav aria-label="Application sections">{(Object.keys(viewLabels) as View[]).map((item) => <button key={item} type="button" className={view === item ? "active" : ""} onClick={() => setView(item)}>{viewLabels[item]}</button>)}</nav>
-      <button className="publish-button" type="button" onClick={runDemo} disabled={runState === "loading"}>{runState === "loading" ? "Starting…" : "Run demo case"} <span>↗</span></button>
+      <button className="publish-button" type="button" onClick={runDemo} disabled={runState === "loading"}>{runState === "loading" ? "Starting…" : liveRun ? "Run again" : "Run demo case"} <span>↗</span></button>
     </header>
-    <section className="case-ribbon"><p><span>Case file</span>{productCopy.caseTitle}</p><div className="timeline-pips" aria-label="Current point in the timeline"><i /><i /><i className="current" /><i /><i /></div><p className="run-id">PXC-APR14-001 · Seed locked</p></section>
+    <section className="case-ribbon"><p><span>Case file</span>{productCopy.caseTitle}</p><div className="timeline-pips" aria-label="Current point in the timeline"><i /><i /><i className="current" /><i /><i /></div><p className="run-id">{runIdentifier}</p></section>
     {currentView}
     {runState === "error" && <p className="run-error">Could not reach the FastAPI server. Start the backend, then try the demo again.</p>}
     <footer className="app-footer"><span>Visual-novel presentation · Python simulation stays authoritative</span><span>Official MVP scrapbook theme</span></footer>
