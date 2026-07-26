@@ -1,0 +1,122 @@
+/* Usable AI setup → lobby → deterministic replay flow. */
+.dialogue-box {
+  padding-top: 54px;
+}
+
+.speaker-tag {
+  top: 10px;
+  max-width: calc(100% - 36px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0 4px;
+}
+
+.ai-flow-strip span {
+  padding: 9px 10px;
+  border: 1px dashed #b8a6aa;
+  color: #786b7b;
+  background: #eee1cf;
+  font: .62rem/1.35 "DM Mono", monospace;
+  text-align: center;
+}
+
+.ai-flow-strip span.is-complete {
+  color: #3f6650;
+  border-style: solid;
+  border-color: #a9c39f;
+  background: #d9e7d5;
+}
+
+.flow-note {
+  padding: 12px 14px;
+  background: #eee1cf;
+  border-left: 4px solid #8e5e7a;
+  color: #64586b;
+}
+
+.runtime-library {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed #cbb8aa;
+}
+
+.runtime-choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 16px;
+  width: 100%;
+  text-align: left;
+  background: #ead9c4 !important;
+  color: #493e50 !important;
+  border: 1px solid transparent !important;
+}
+
+.runtime-choice span {
+  font-weight: 600;
+}
+
+.runtime-choice small {
+  grid-column: 1;
+  color: #786b7b;
+  font: .62rem "DM Mono", monospace;
+  overflow-wrap: anywhere;
+}
+
+.runtime-choice b {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #76586f;
+  font: .62rem "DM Mono", monospace;
+}
+
+.runtime-choice.is-selected {
+  border-color: #9db895 !important;
+  background: #d9e7d5 !important;
+}
+
+.lobby-card small {
+  display: block;
+  margin-top: 5px;
+  color: #756a78;
+  font: .61rem/1.4 "DM Mono", monospace;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 850px) {
+  .ai-flow-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dialogue-box {
+    padding-top: 50px;
+  }
+
+  .speaker-tag {
+    top: 9px;
+  }
+
+  .ai-flow-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .runtime-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .runtime-choice b {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
