@@ -50,7 +50,7 @@ R2_ADDRESSING_STYLE=path
 
 Configure the R2 bucket CORS policy to allow `PUT` from the frontend origin with the `Content-Type` header. Browsers receive only short-lived presigned URLs; R2 credentials remain in the backend.
 
-## Test a real AI provider
+## Connect and run a real AI provider
 
 Generate and keep a stable Fernet key:
 
@@ -58,14 +58,25 @@ Generate and keep a stable Fernet key:
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Set it as `PARADOX_CAST_CREDENTIAL_KEY`, then use **Integration lab** to enter the provider, model ID, and API key. Supported adapters are:
+Set it as `PARADOX_CAST_CREDENTIAL_KEY`. Supported adapters are:
 
 - `deepseek` via `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`)
 - `openai` via `OPENAI_BASE_URL` (default `https://api.openai.com/v1`)
 - `openai_compatible` via `OPENAI_COMPATIBLE_BASE_URL`
 - `mock` for deterministic offline tests
 
-Provider output cannot directly mutate simulation state. It must select one action from the legal set supplied by the Python server.
+Then use the product flow:
+
+1. Open **Integration lab**.
+2. Enter the provider, an available model ID, and a non-production API key.
+3. Select **Save, test, and use in Lobby**. A successful runtime becomes the preferred host-funded runtime.
+4. Open **Lobby**, create an AI lobby, and bind the host character to that runtime.
+5. Other participants join and bind their character cards. They inherit the host-funded runtime without receiving the host credential.
+6. Mark every cast member ready and select **Start AI run**.
+7. The server freezes the Run Manifest, asks every bound runtime to select from server-generated legal actions, validates each answer, executes the result through the deterministic Python kernel, and opens the visual-novel replay.
+8. Inspect **A · Original**, **B · Branch**, **Timeline**, and **A/B compare**.
+
+Provider output cannot directly mutate simulation state. AI selects one action from a legal set supplied by the Python server. The kernel remains authoritative for routes, travel time, encounters, observations, dialogue effects, event ordering, replay, and timeline branching. If a configured provider fails, the local product flow records the failure and may use an explicit legal `wait` fallback.
 
 ## Manual local development
 
@@ -90,11 +101,11 @@ npm run dev
 
 The Vite app proxies `/api` to the backend during local development. Set `VITE_API_BASE_URL` when the API is served from another origin.
 
-## Test the deterministic demo loop
+## Test the deterministic mock loop
 
-Start the backend and frontend, then select **Run demo case**. The button calls `POST /api/demo/run`, creates demo Character Cards, a Scenario, Lobby, ready cast, and frozen Run Manifest, and returns the authoritative original simulation and an explainable branched replay.
+Start the backend and frontend, then select **Run mock demo**. The button calls `POST /api/demo/run`, creates demo Character Cards, a Scenario, Lobby, ready cast, and frozen Run Manifest, and returns the authoritative original simulation and an explainable branched replay.
 
-The UI opens the visual-novel player with the live manifest. Use **A · Original** and **B · Branch** to replay every simulation event in order. The deterministic demo needs no provider API key.
+The UI opens the visual-novel player with the live manifest. Use **A · Original** and **B · Branch** to replay every simulation event in order. The deterministic mock demo needs no provider API key and remains available as an offline regression path.
 
 ## Official default artwork
 
@@ -102,8 +113,8 @@ Four canonical neutral portraits for the adult default cast are committed under 
 
 ## Architecture
 
-- `backend/`: FastAPI, SQLAlchemy, PostgreSQL/SQLite, provider and object-storage adapters, and the authoritative simulation kernel.
-- `web/`: React + TypeScript visual-novel application, local multiplayer lobby, and integration test surface.
+- `backend/`: FastAPI, SQLAlchemy, PostgreSQL/SQLite, provider and object-storage adapters, AI-run orchestration, and the authoritative simulation kernel.
+- `web/`: React + TypeScript visual-novel application, local multiplayer lobby, AI runtime setup, and integration test surface.
 - `docs/`: locked product constraints, specifications, assets, operations, and user-test notes.
 - `assets/`: committed official default visual assets and manifests.
 

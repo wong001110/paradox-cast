@@ -11,8 +11,14 @@ import {
   uploadAsset,
   type AssetRecord,
   type LocalBootstrap,
+  type RuntimeRecord,
   type SystemStatus,
 } from "./api";
+import {
+  getPreferredRuntimeId,
+  listRuntimes,
+  setPreferredRuntimeId,
+} from "./ai_api";
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "Unexpected integration error";
@@ -22,6 +28,8 @@ export function IntegrationLab() {
   const [bootstrap, setBootstrap] = useState<LocalBootstrap | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [runtimes, setRuntimes] = useState<RuntimeRecord[]>([]);
+  const [preferredRuntimeId, setPreferredRuntime] = useState<string | null>(() => getPreferredRuntimeId());
   const [provider, setProvider] = useState("deepseek");
   const [modelId, setModelId] = useState("");
   const [apiSecret, setApiSecret] = useState("");
@@ -36,7 +44,11 @@ export function IntegrationLab() {
     setBootstrap(nextBootstrap);
     setStatus(nextStatus);
     const hostId = nextBootstrap.users.find((user) => user.is_host)?.id;
-    if (hostId) setAssets(await listAssets(hostId));
+    if (hostId) {
+      const [nextAssets, nextRuntimes] = await Promise.all([listAssets(hostId), listRuntimes(hostId)]);
+      setAssets(nextAssets);
+      setRuntimes(nextRuntimes);
+    }
   };
 
   useEffect(() => {
@@ -68,6 +80,11 @@ export function IntegrationLab() {
     }
   };
 
+  const chooseRuntime = (runtimeId: string) => {
+    setPreferredRuntimeId(runtimeId);
+    setPreferredRuntime(runtimeId);
+  };
+
   const saveAndTestRuntime = async () => {
     if (!ownerId || !modelId.trim() || !apiSecret.trim()) return;
     setBusy("runtime");
@@ -83,7 +100,10 @@ export function IntegrationLab() {
         credential_id: credential.id,
         temperature: 0.2,
       });
-      setRuntimeResult(await testRuntime(ownerId, runtime.id));
+      const result = await testRuntime(ownerId, runtime.id);
+      setRuntimeResult(result);
+      chooseRuntime(runtime.id);
+      setRuntimes(await listRuntimes(ownerId));
     } catch (reason) {
       setError(messageOf(reason));
     } finally {
@@ -95,9 +115,9 @@ export function IntegrationLab() {
     <section className="integration-shell">
       <header className="integration-heading">
         <div>
-          <p className="eyebrow">Local integration lab</p>
-          <h2>Verify database, object storage, and a real AI runtime.</h2>
-          <p>Secrets are submitted to the backend, encrypted, masked, and never returned to this page.</p>
+          <p className="eyebrow">Step 1 · Configure AI</p>
+          <h2>Connect a real AI runtime, then use it from the Lobby.</h2>
+          <p>The backend encrypts and masks the API key. A successful runtime is selected as the host-funded Lobby runtime.</p>
         </div>
         <button type="button" onClick={() => void refresh()} disabled={Boolean(busy)}>Refresh status</button>
       </header>
@@ -134,7 +154,8 @@ export function IntegrationLab() {
 
         <article className="integration-card runtime-lab">
           <p className="note-label">Real AI provider</p>
-          <h3>Create, encrypt, and test a runtime</h3>
+          <h3>Create, encrypt, test, and select a runtime</h3>
+          <p className="flow-note">After this test succeeds: open <strong>Lobby</strong>, create a room, bind the selected host runtime, ready the cast, and press <strong>Start AI run</strong>.</p>
           <label>Provider<select value={provider} onChange={(event) => setProvider(event.target.value)}>
             <option value="deepseek">DeepSeek</option>
             <option value="openai">OpenAI</option>
@@ -143,9 +164,24 @@ export function IntegrationLab() {
           <label>Model ID<input value={modelId} onChange={(event) => setModelId(event.target.value)} placeholder="Use a model available to your account" /></label>
           <label>API key<input type="password" autoComplete="off" value={apiSecret} onChange={(event) => setApiSecret(event.target.value)} placeholder="Stored encrypted by the backend" /></label>
           <button type="button" disabled={!ownerId || !modelId.trim() || !apiSecret.trim() || busy === "runtime"} onClick={() => void saveAndTestRuntime()}>
-            {busy === "runtime" ? "Calling provider…" : "Save credential & test decision"}
+            {busy === "runtime" ? "Calling provider…" : "Save, test, and use in Lobby"}
           </button>
           {runtimeResult && <pre>{JSON.stringify(runtimeResult, null, 2)}</pre>}
+
+          <div className="runtime-library">
+            <p className="note-label">Host runtime library</p>
+            {runtimes.map((runtime) => <button
+              type="button"
+              className={runtime.id === preferredRuntimeId ? "runtime-choice is-selected" : "runtime-choice"}
+              key={runtime.id}
+              onClick={() => chooseRuntime(runtime.id)}
+            >
+              <span>{runtime.display_name}</span>
+              <small>{runtime.provider} · {runtime.model_id}</small>
+              <b>{runtime.id === preferredRuntimeId ? "Selected for Lobby" : "Use in Lobby"}</b>
+            </button>)}
+            {runtimes.length === 0 && <p>No runtime profiles yet.</p>}
+          </div>
         </article>
       </div>
     </section>
