@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import "./styles.css";
 import "./replay.css";
 import "./integration.css";
+import "./ai_flow.css";
 import { startDemoRun, timelineFromSimulation, type DemoRun } from "./api";
 import {
   adminSummary,
@@ -89,6 +90,7 @@ function Player({ original, branched, live }: { original: TimelineEvent[]; branc
   const activeIds = new Set(
     [event.characterId, event.speakerId, ...(event.characterIds ?? [])].filter((id): id is string => Boolean(id)),
   );
+  const aiRun = Boolean(live && "mode" in live.case && live.case.mode === "ai");
 
   useEffect(() => {
     setMode("original");
@@ -111,14 +113,14 @@ function Player({ original, branched, live }: { original: TimelineEvent[]; branc
         <div className="note-card">
           <p className="note-label">Replay track</p>
           <strong>{mode === "original" ? "A · Original" : "B · Branch"}</strong>
-          <p>{live ? "● Manifest locked" : "○ Preview data"}</p>
+          <p>{live ? aiRun ? "● AI manifest run" : "● Mock manifest run" : "○ Preview data"}</p>
         </div>
       </aside>
 
       <section className={`stage stage-${event.locationId ?? "timeline"}`} aria-live="polite">
         <div className="stage-background"><span className="window-glow" /><span className="bookshelf" /><span className="desk-lamp" /></div>
         <header className="replay-toolbar">
-          <div><p className="note-label">Authoritative event replay</p><strong>{live ? `Seed ${live.case.seed} · ${live.case.manifest_id.slice(0, 8)}` : "Prepared MVP preview"}</strong></div>
+          <div><p className="note-label">{aiRun ? "AI decision replay" : "Authoritative event replay"}</p><strong>{live ? `Seed ${live.case.seed} · ${live.case.manifest_id.slice(0, 8)}` : "Prepared MVP preview"}</strong></div>
           <div className="replay-mode" aria-label="Replay timeline">
             <button type="button" className={mode === "original" ? "active" : ""} aria-pressed={mode === "original"} onClick={() => changeMode("original")}>A · Original</button>
             <button type="button" className={mode === "branch" ? "active" : ""} aria-pressed={mode === "branch"} onClick={() => changeMode("branch")}>B · Branch</button>
@@ -142,7 +144,7 @@ function Player({ original, branched, live }: { original: TimelineEvent[]; branc
 
       <aside className="paper-side notes-side">
         <p className="note-label">Event trace</p><h2>{event.title}</h2>
-        <ul className="fragment-list trace-list"><li>{event.detail}</li><li>Source: {sourceName(event.source)}</li><li>Authority: deterministic Python simulation</li></ul>
+        <ul className="fragment-list trace-list"><li>{event.detail}</li><li>Decision source: {sourceName(event.source)}</li><li>Authority: deterministic Python simulation</li></ul>
         <div className="objective-note"><p className="note-label">Current objective</p><strong>Explain event {safeEntry + 1} of {events.length}.</strong></div>
       </aside>
     </section>
@@ -186,7 +188,7 @@ function App() {
   };
 
   let currentView;
-  if (view === "lobby") currentView = <LocalLobby />;
+  if (view === "lobby") currentView = <LocalLobby onRunComplete={(run) => { setLiveRun(run); setView("player"); }} />;
   else if (view === "timeline") currentView = <Timeline label={liveRun ? "Live simulation timeline" : "Original timeline"} events={original} />;
   else if (view === "compare") currentView = <Compare original={original} branched={branched} live={liveRun} />;
   else if (view === "integrations") currentView = <IntegrationLab />;
@@ -199,12 +201,12 @@ function App() {
     <header className="topbar">
       <a className="brand" href="#top" onClick={(event) => { event.preventDefault(); setView("player"); }}><span>Paradox</span><em>Cast</em><small>AI Timeline Mystery Creator</small></a>
       <nav aria-label="Application sections">{(Object.keys(viewLabels) as View[]).map((item) => <button key={item} type="button" className={view === item ? "active" : ""} onClick={() => setView(item)}>{viewLabels[item]}</button>)}</nav>
-      <button className="publish-button" type="button" onClick={runDemo} disabled={runState === "loading"}>{runState === "loading" ? "Starting…" : liveRun ? "Run again" : "Run demo case"} <span>↗</span></button>
+      <button className="publish-button" type="button" onClick={runDemo} disabled={runState === "loading"}>{runState === "loading" ? "Starting…" : liveRun ? "Run mock again" : "Run mock demo"} <span>↗</span></button>
     </header>
     <section className="case-ribbon"><p><span>Case file</span>{productCopy.caseTitle}</p><div className="timeline-pips" aria-label="Current point in the timeline"><i /><i /><i className="current" /><i /><i /></div><p className="run-id">{runIdentifier}</p></section>
     {currentView}
-    {runState === "error" && <p className="run-error">Could not reach the FastAPI server. Start the backend, then try the demo again.</p>}
-    <footer className="app-footer"><span>Visual-novel presentation · Python simulation stays authoritative</span><span>Local integration stack ready</span></footer>
+    {runState === "error" && <p className="run-error">Could not reach the FastAPI server. Start the backend, then try the mock demo again.</p>}
+    <footer className="app-footer"><span>AI chooses legal intentions · Python remains authoritative</span><span>Local integration stack ready</span></footer>
   </main>;
 }
 
