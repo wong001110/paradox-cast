@@ -78,6 +78,16 @@ python -m venv .venv
 .venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
+On Windows PowerShell, the SQLite development backend can be started with the
+included script from the project root:
+
+```powershell
+.\start-backend.ps1
+```
+
+After the first run, use `.\start-backend.ps1 -SkipInstall` to skip dependency
+installation.
+
 The default database is SQLite. Set `DATABASE_URL=postgresql+psycopg://...` to use PostgreSQL.
 
 ### Frontend
