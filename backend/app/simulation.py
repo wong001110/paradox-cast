@@ -95,14 +95,14 @@ class SimulationKernel:
             self._reject(action, started_at, "no_legal_route")
             return
         if not path:
-            self.events.append(_event("destination_unchanged", started_at, character_id=action.character_id, location_id=state.location_id))
+            self.events.append(_event("destination_unchanged", started_at, action_id=action.id, character_id=action.character_id, location_id=state.location_id))
             return
         self.events.append(_event("movement_started", started_at, character_id=action.character_id, from_location_id=state.location_id, destination_id=action.destination_id, action_id=action.id))
         cursor = started_at
         for edge in path:
             arrival = cursor + edge.travel_minutes
             self._transits.append(_Transit(action.character_id, edge.source, edge.destination, cursor, arrival, edge.route_id))
-            self.events.append(_event("route_segment_traversed", cursor, character_id=action.character_id, route_id=edge.route_id, from_location_id=edge.source, to_location_id=edge.destination, arrived_at=arrival))
+            self.events.append(_event("route_segment_traversed", cursor, action_id=action.id, character_id=action.character_id, route_id=edge.route_id, from_location_id=edge.source, to_location_id=edge.destination, arrived_at=arrival))
             cursor = arrival
         state.location_id, state.available_at = action.destination_id, cursor
         self.events.append(_event("movement_arrived", cursor, character_id=action.character_id, location_id=action.destination_id, action_id=action.id))
@@ -113,7 +113,7 @@ class SimulationKernel:
 
     def _observe(self, action: SimulationAction) -> None:
         state, at = self._at_location(action)
-        self.events.append(_event("observation", at, character_id=action.character_id, location_id=state.location_id, target_character_id=action.target_character_id, content=action.content, source="direct_observation"))
+        self.events.append(_event("observation", at, action_id=action.id, character_id=action.character_id, location_id=state.location_id, target_character_id=action.target_character_id, content=action.content, source="direct_observation"))
 
     def _speak(self, action: SimulationAction) -> None:
         state, at = self._at_location(action)
@@ -121,13 +121,13 @@ class SimulationKernel:
             character_id for character_id, other in self.states.items()
             if character_id != action.character_id and other.location_id == state.location_id and other.available_at <= at
         ]
-        self.events.append(_event("dialogue", at, speaker_id=action.character_id, location_id=state.location_id, target_character_id=action.target_character_id, content=action.content, recipients=recipients))
+        self.events.append(_event("dialogue", at, action_id=action.id, speaker_id=action.character_id, location_id=state.location_id, target_character_id=action.target_character_id, content=action.content, recipients=recipients))
         # Hearing is a separate event so the replay can explain information sources.
         for listener_id in recipients:
             if listener_id == action.target_character_id:
                 continue
             partial = action.content[: max(1, len(action.content) // 2)] if action.content else ""
-            self.events.append(_event("partial_overhearing", at, character_id=listener_id, speaker_id=action.character_id, location_id=state.location_id, content=partial, source="overheard", confidence=0.5))
+            self.events.append(_event("partial_overhearing", at, action_id=action.id, character_id=listener_id, speaker_id=action.character_id, location_id=state.location_id, content=partial, source="overheard", confidence=0.5))
 
     def _intercept(self, action: SimulationAction) -> None:
         state, at = self._at_location(action)
@@ -135,7 +135,7 @@ class SimulationKernel:
         if not target or target.location_id != state.location_id or target.available_at > at:
             self._reject(action, at, "target_not_interceptable")
             return
-        self.events.append(_event("interception", at, character_id=action.character_id, target_character_id=action.target_character_id, location_id=state.location_id, content=action.content, source="direct_interception"))
+        self.events.append(_event("interception", at, action_id=action.id, character_id=action.character_id, target_character_id=action.target_character_id, location_id=state.location_id, content=action.content, source="direct_interception"))
 
     def _execute(self, action: SimulationAction) -> None:
         if action.kind in {"move", "change_destination"}:

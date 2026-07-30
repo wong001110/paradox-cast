@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import models  # noqa: F401 - registers SQLAlchemy metadata
+from .ai_lobby_routes import router as ai_lobby_router
+from .ai_run_routes import router as ai_run_router
 from .asset_routes import router as asset_router
 from .branching_routes import router as branching_router
 from .character_routes import router as character_router
@@ -21,7 +23,7 @@ from .system_routes import router as system_router
 
 app = FastAPI(
     title="Paradox Cast API",
-    version="0.2.0",
+    version="0.3.0",
     description="The authoritative timeline simulation API.",
 )
 
@@ -44,6 +46,8 @@ app.include_router(character_router)
 app.include_router(scenario_router)
 app.include_router(lobby_router)
 app.include_router(lobby_socket_router)
+app.include_router(ai_lobby_router)
+app.include_router(ai_run_router)
 app.include_router(runtime_router)
 app.include_router(asset_router)
 app.include_router(system_router)
